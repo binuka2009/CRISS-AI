@@ -74,13 +74,15 @@ async function connectToWA() {
     var { version } = await fetchLatestBaileysVersion();
 
     const conn = makeWASocket({
-        logger: P({ level: 'silent' }),
-        printQRInTerminal: false,
-        browser: Browsers.macOS("Firefox"),
-        syncFullHistory: true,
-        auth: state,
-        version
-    });
+    logger: P({ level: 'silent' }),
+    printQRInTerminal: false,
+    browser: Browsers.macOS("Firefox"),
+    syncFullHistory: false, // මෙය false කරන්න (Vercel සඳහා ලෙහෙසියි)
+    auth: state,
+    version,
+    connectTimeoutMs: 60000, // Timeout එක වැඩි කරන්න
+    defaultQueryTimeoutMs: undefined,
+});
 
     conn.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
