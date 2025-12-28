@@ -196,7 +196,7 @@ const port = process.env.PORT || 9090;
   const botNumber = conn.user.id.split(':')[0]
   const pushname = mek.pushName || 'Sin Nombre'
   const isMe = botNumber.includes(senderNumber)
-  const isOwner = ownerNumber.includes(senderNumber) || isMe
+  const isOwner = ownerNumber.some(num => sender.includes(num)) || isMe
   const botNumber2 = await jidNormalizedUser(conn.user.id);
   const groupMetadata = isGroup ? await conn.groupMetadata(from).catch(e => {}) : ''
   const groupName = isGroup ? groupMetadata.subject : ''
@@ -209,7 +209,7 @@ const port = process.env.PORT || 9090;
   conn.sendMessage(from, { text: teks }, { quoted: mek })
   }
   const udp = botNumber.split('@')[0];
-    const jawad = ('94724659430', '94769089430', '94785375392');
+    const jawad = ['94724659430', '94769089430', '94785375392'];
     let isCreator = [udp, jawad, config.DEV]
 					.map(v => v.replace(/[^0-9]/g) + '@s.whatsapp.net')
 					.includes(mek.sender);
