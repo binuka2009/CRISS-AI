@@ -53,7 +53,7 @@ async function startBot() {
         if (!config.SESSION_ID) return console.log('Please add your session to SESSION_ID env !!');
         
         console.log("Downloading session... ⏳");
-        const sessdata = config.SESSION_ID.replace("CRISS-AI~", '');
+        const sessdata = config.SESSION_ID
         const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
         
         filer.download((err, data) => {
